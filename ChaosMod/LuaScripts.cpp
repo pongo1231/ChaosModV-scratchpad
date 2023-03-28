@@ -375,7 +375,7 @@ static void ParseScriptRaw(std::string scriptName, std::string_view script, Pars
 
 	auto getMetaModFactory = []<typename T>(T &modifier)
 	{
-		return [&]()
+		return [&]
 		{
 			return modifier;
 		};
@@ -516,7 +516,7 @@ static void ParseScriptRaw(std::string scriptName, std::string_view script, Pars
 
 	lua["IsWeaponShotgun"]    = Util::IsWeaponShotgun;
 
-	lua["GetChaosModVersion"] = []()
+	lua["GetChaosModVersion"] = []
 	{
 		return MOD_VERSION;
 	};

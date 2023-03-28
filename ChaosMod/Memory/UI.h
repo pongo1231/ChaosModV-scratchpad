@@ -31,7 +31,7 @@ namespace Memory
 	{
 		static MinimapData defaultMinimap[3];
 		static void(__cdecl * refreshMinimapFunc)();
-		static auto minimapData = []() -> MinimapData *
+		static auto minimapData = [] -> MinimapData *
 		{
 			Handle handle = Memory::FindPattern(
 			    "?? 8D 15 ?? ?? ?? ?? ?? 6B C9 78 8B 44 ?? ?? 89 03 8B 44 ?? ?? 89 43 04 8A 4C ?? ??");

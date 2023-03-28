@@ -84,7 +84,7 @@ static void Init()
 {
 	// Attempt to print game build number
 	// We're doing it here as the build number isn't available when the mod is attached to the game process
-	static auto printedGameBuild = []()
+	static auto printedGameBuild = []
 	{
 		auto gameBuild = Memory::GetGameBuild();
 		if (gameBuild.empty())

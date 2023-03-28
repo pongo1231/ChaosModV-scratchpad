@@ -63,7 +63,7 @@ static void OnTriggerEffect(DebugSocket *debugSocket, std::shared_ptr<ix::Connec
 	}
 
 	QueueDelegate(debugSocket,
-	              [targetEffectId]()
+	              [targetEffectId]
 	              {
 		              auto result = g_dictEnabledEffects.find(targetEffectId);
 		              if (result != g_dictEnabledEffects.end())
@@ -105,8 +105,48 @@ static void OnExecScript(DebugSocket *debugSocket, std::shared_ptr<ix::Connectio
 	json["script_name"] = scriptName;
 	webSocket.send(json.dump());
 
-	QueueDelegate(debugSocket, [payloadJson, scriptName]()
+	QueueDelegate(debugSocket, [payloadJson, scriptName]
 	              { LuaScripts::RegisterScriptRawTemporary(scriptName, payloadJson["script_raw"]); });
+}
+
+static void OnFetchProfiles(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionState> connectionState,
+                            ix::WebSocket &webSocket, const json &payloadJson)
+{
+	if (!payloadJson.contains("state") || !payloadJson["state"].is_string())
+	{
+		return;
+	}
+
+	const auto &state = payloadJson["state"];
+	if (state == "start")
+	{
+		debugSocket->m_IsProfiling = true;
+	}
+	else if (state == "stop")
+	{
+		debugSocket->m_IsProfiling = false;
+		QueueDelegate(debugSocket, [&] { debugSocket->m_EffectTraceStats.clear(); });
+	}
+	else if (state == "fetch")
+	{
+		QueueDelegate(debugSocket,
+		              [&]
+		              {
+			              json resultJson;
+			              resultJson["command"] = "profile_state";
+			              for (const auto &[effectId, traceStats] : debugSocket->m_EffectTraceStats)
+			              {
+				              json profileJson;
+				              profileJson["effect_id"]       = effectId;
+				              profileJson["last_entry_time"] = traceStats.EntryTimestamp;
+				              profileJson["max_exec_time"]   = traceStats.MaxTime;
+
+				              resultJson["profiles"].push_back(profileJson);
+			              }
+
+			              webSocket.send(resultJson.dump());
+		              });
+	}
 }
 
 static void OnMessage(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionState> connectionState,
@@ -143,8 +183,40 @@ static void OnMessage(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionSt
 	SET_HANDLER("fetch_effects", OnFetchEffects);
 	SET_HANDLER("trigger_effect", OnTriggerEffect);
 	SET_HANDLER("exec_script", OnExecScript);
+	SET_HANDLER("profile_state", OnFetchProfiles);
 
 #undef HANDLER
+}
+
+static bool EventOnPreRunEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
+{
+	if (!debugSocket->m_IsProfiling)
+	{
+		return true;
+	}
+
+	debugSocket->m_EffectTraceStats[identifier.GetEffectId()].EntryTimestamp = GetTickCount64();
+	return true;
+}
+
+static void EventOnPostRunEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
+{
+	if (!debugSocket->m_IsProfiling)
+	{
+		return;
+	}
+
+	const auto &effectId = identifier.GetEffectId();
+	if (!debugSocket->m_EffectTraceStats.contains(effectId))
+	{
+		return;
+	}
+
+	auto execTime = GetTickCount64() - debugSocket->m_EffectTraceStats[effectId].EntryTimestamp;
+	if (execTime > debugSocket->m_EffectTraceStats[effectId].MaxTime)
+	{
+		debugSocket->m_EffectTraceStats[effectId].MaxTime = execTime;
+	}
 }
 
 DebugSocket::DebugSocket()
@@ -161,6 +233,14 @@ DebugSocket::DebugSocket()
 	LOG("Listening for incoming connections on port " STR(LISTEN_PORT));
 #undef STR_HELPER
 #undef STR
+
+	if (ComponentExists<EffectDispatcher>())
+	{
+		GetComponent<EffectDispatcher>()->OnPreRunEffect.AddListener([&](const EffectIdentifier &identifier)
+		                                                             { return EventOnPreRunEffect(this, identifier); });
+		GetComponent<EffectDispatcher>()->OnPostRunEffect.AddListener([&](const EffectIdentifier &identifier)
+		                                                              { EventOnPostRunEffect(this, identifier); });
+	}
 }
 
 DebugSocket::~DebugSocket()

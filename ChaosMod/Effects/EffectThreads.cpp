@@ -93,45 +93,48 @@ namespace EffectThreads
 		}
 	}
 
-	void RunThreads()
+	void _RunThread(auto &it, DWORD64 curTimestamp)
 	{
-		static int c_iLastFrame = GET_FRAME_COUNT();
-		int iCurFrame           = GET_FRAME_COUNT();
+		std::unique_ptr<EffectThread> &thread = *it;
 
-		if (c_iLastFrame == iCurFrame)
+		if (thread->HasStopped())
 		{
+			it = m_rgThreads.erase(it);
 			return;
 		}
 
-		c_iLastFrame            = iCurFrame;
-
-		DWORD64 ullCurTimestamp = GetTickCount64();
-
-		for (auto it = m_rgThreads.begin(); it != m_rgThreads.end();)
+		if (thread->m_iPauseTime > 0 && m_ullLastTimestamp)
 		{
-			std::unique_ptr<EffectThread> &pThread = *it;
-
-			if (pThread->HasStopped())
-			{
-				it = m_rgThreads.erase(it);
-
-				continue;
-			}
-
-			if (pThread->m_iPauseTime > 0 && m_ullLastTimestamp)
-			{
-				pThread->m_iPauseTime -= ullCurTimestamp - m_ullLastTimestamp;
-			}
-
-			if (pThread->m_iPauseTime <= 0)
-			{
-				pThread->OnRun();
-			}
-
-			it++;
+			thread->m_iPauseTime -= curTimestamp - m_ullLastTimestamp;
 		}
 
-		m_ullLastTimestamp = ullCurTimestamp;
+		if (thread->m_iPauseTime <= 0)
+		{
+			thread->OnRun();
+		}
+
+		it++;
+	}
+
+	void RunThreads()
+	{
+		auto curTimestamp = GetTickCount64();
+		for (auto it = m_rgThreads.begin(); it != m_rgThreads.end();)
+		{
+			_RunThread(it, curTimestamp);
+		}
+	}
+
+	void RunThread(DWORD threadId)
+	{
+		for (auto it = m_rgThreads.begin(); it != m_rgThreads.end();)
+		{
+			if ((*it)->m_ullId == threadId)
+			{
+				_RunThread(it, GetTickCount64());
+				break;
+			}
+		}
 	}
 
 	bool DoesThreadExist(DWORD64 threadId)

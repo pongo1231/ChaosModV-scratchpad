@@ -23,6 +23,7 @@ namespace EffectThreads
 	void PutThreadOnPause(DWORD ulTimeMs);
 
 	void RunThreads();
+	void RunThread(DWORD threadId);
 
 	bool DoesThreadExist(DWORD64 threadId);
 	bool HasThreadOnStartExecuted(DWORD64 threadId);

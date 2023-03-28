@@ -17,7 +17,7 @@ namespace Memory
 {
 	inline bool DoesEntityHaveCollider(Entity entity)
 	{
-		static auto CEntity_GetColliderNonConst = []() -> void *(*)(DWORD64)
+		static auto CEntity_GetColliderNonConst = [] -> void *(*)(DWORD64)
 		{
 			Handle handle = FindPattern("? 85 C0 74 ? ? 3B ? ? ? ? ? 75 ? ? 8B CF E8 ? ? ? ? ? 8D");
 			if (handle.IsValid())

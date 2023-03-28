@@ -10,16 +10,17 @@
 namespace Memory
 {
 	typedef uintptr_t(__cdecl PlayAmbientSpeech)(uintptr_t a1, unsigned int speechNameHash, const char *speechParam,
-	                                              unsigned int voiceNameHash, int a5, uintptr_t a6, int a7, int a8,
-	                                              float a9, char a10, unsigned int *speechIndexPtr, float *position);
+	                                             unsigned int voiceNameHash, int a5, uintptr_t a6, int a7, int a8,
+	                                             float a9, char a10, unsigned int *speechIndexPtr, float *position);
 
 	inline void PlayAmbientSpeechAtCoordsWithIndex(const std::string &speechName, const std::string &voiceName,
-	                                               Vector3 coords, unsigned int speechIndex, const std::string &speechParam)
+	                                               Vector3 coords, unsigned int speechIndex,
+	                                               const std::string &speechParam)
 	{
-		static PlayAmbientSpeech* playAmbientSpeechFunc;
+		static PlayAmbientSpeech *playAmbientSpeechFunc;
 		static unsigned int(__cdecl * getHashKeyFunc)(const char *string, unsigned int init);
 
-		static Handle handle = []() -> Handle
+		static Handle handle = [] -> Handle
 		{
 			Handle initHandle = Memory::FindPattern("48 89 5C 24 08 57 48 83 EC 40 F3 41 0F 10 00");
 
@@ -49,7 +50,6 @@ namespace Memory
 		float pos[3]        = { coords.x, coords.y, coords.z };
 
 		playAmbientSpeechFunc(globalPtr + 0x4410, getHashKeyFunc(speechName.c_str(), 0), speechParam.c_str(),
-		                      GET_HASH_KEY(voiceName.c_str()), -1, 0, 0, -1, 1.0, 1,
-		                      &speechIndex, pos);
+		                      GET_HASH_KEY(voiceName.c_str()), -1, 0, 0, -1, 1.0, 1, &speechIndex, pos);
 	}
 }

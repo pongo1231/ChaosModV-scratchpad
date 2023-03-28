@@ -14,7 +14,7 @@ namespace Memory
 {
 	inline void InvalidateShaderCache()
 	{
-		static auto rage_sgaShader_ResolveShader = []() -> void *(*)(Hash ulHash)
+		static auto rage_sgaShader_ResolveShader = [] -> void *(*)(Hash ulHash)
 		{
 			auto handle = FindPattern("E8 ? ? ? ? 8B C8 E8 ? ? ? ? ? 85 C0 75 ? 81 3D ? ? ? ? 00 02 00 00");
 			if (!handle.IsValid())
@@ -26,7 +26,7 @@ namespace Memory
 			return handle.At(7).Into().Get<void *(Hash)>();
 		}();
 
-		static auto rage_sgaShader_destructor = []() -> void (*)(void *_this)
+		static auto rage_sgaShader_destructor = [] -> void (*)(void *_this)
 		{
 			auto handle = FindPattern("8B CB 84 C0 74 ? E8 ? ? ? ? EB ? E8 ? ? ? ? ? 8B CB E8");
 			if (!handle.IsValid())
@@ -38,7 +38,7 @@ namespace Memory
 			return handle.At(13).Into().Get<void(void *)>();
 		}();
 
-		static auto reloadShaders = []() -> void (*)()
+		static auto reloadShaders = [] -> void (*)()
 		{
 			auto handle = FindPattern("89 ? ? ? ? ? E8 ? ? ? ? ? 8B ? E8 ? ? ? ? ? 84 FF 74 ? ? 8B ? E8");
 			if (!handle.IsValid())

@@ -20,6 +20,13 @@ static void _DispatchEffect(EffectDispatcher *effectDispatcher, const EffectDisp
 		return;
 	}
 
+	if (!effectDispatcher->OnPreDispatch.Fire(entry.Identifier))
+	{
+		return;
+	}
+
+	LOG("Dispatching effect \"" << effectData.Name << "\"");
+
 	// Increase weight for all effects first
 	for (auto &[effectId, effectData] : g_dictEnabledEffects)
 	{
@@ -45,8 +52,6 @@ static void _DispatchEffect(EffectDispatcher *effectDispatcher, const EffectDisp
 			}
 		}
 	}
-
-	LOG("Dispatching effect \"" << effectData.Name << "\"");
 
 	// Check if timed effect already is active, reset timer if so
 	// Also check for incompatible effects
@@ -165,6 +170,8 @@ static void _DispatchEffect(EffectDispatcher *effectDispatcher, const EffectDisp
 			}
 		}
 	}
+
+	effectDispatcher->OnPostDispatch.Fire(entry.Identifier);
 }
 
 static void _OnRunEffects(LPVOID data)
@@ -323,23 +330,18 @@ void EffectDispatcher::UpdateEffects(int iDeltaTime)
 		m_ClearEffectsState = ClearEffectsState::None;
 	}
 
-	EffectThreads::RunThreads();
-
-	// Don't continue if there are no enabled effects
-	if (g_dictEnabledEffects.empty())
-	{
-		return;
-	}
-
 	float fDeltaTime = (float)iDeltaTime / 1000;
 
 	int maxEffects =
 	    std::min((int)(floor((1.0f - GetEffectTopSpace()) / m_fEffectsInnerSpacingMin) - 1), m_iMaxRunningEffects);
 	int effectCountToCheckCleaning = 3;
-	std::vector<ActiveEffect>::iterator it;
-	for (it = m_rgActiveEffects.begin(); it != m_rgActiveEffects.end();)
+	for (auto it = m_rgActiveEffects.begin(); it != m_rgActiveEffects.end();)
 	{
-		ActiveEffect &effect = *it;
+		auto &effect = *it;
+
+		OnPreRunEffect.Fire(effect.m_EffectIdentifier);
+		EffectThreads::RunThread(effect.m_ullThreadId);
+		OnPostRunEffect.Fire(effect.m_EffectIdentifier);
 
 		if (effect.m_bHideText && EffectThreads::HasThreadOnStartExecuted(effect.m_ullThreadId))
 		{

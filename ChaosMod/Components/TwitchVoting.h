@@ -20,7 +20,6 @@ enum class ETwitchOverlayMode : int
 
 class TwitchVoting : public Component
 {
-  private:
 	struct ChoosableEffect
 	{
 		ChoosableEffect(const EffectIdentifier &effectIdentifier, const std::string &szName, int iMatch)

@@ -8,6 +8,8 @@
 #include "Effects/EffectThreads.h"
 #include "Effects/EnabledEffectsMap.h"
 
+#include "Util/Events.h"
+
 #include <array>
 #include <list>
 #include <memory>
@@ -23,6 +25,13 @@ enum class ETwitchOverlayMode;
 
 class EffectDispatcher : public Component
 {
+  public:
+	ConditionalChaosEvent<const EffectIdentifier &> OnPreDispatch;
+	ChaosEvent<const EffectIdentifier &> OnPostDispatch;
+
+	ChaosEvent<const EffectIdentifier &> OnPreRunEffect;
+	ChaosEvent<const EffectIdentifier &> OnPostRunEffect;
+
   private:
 	struct ActiveEffect
 	{
@@ -82,6 +91,7 @@ class EffectDispatcher : public Component
 
   public:
 	std::vector<ActiveEffect> m_rgActiveEffects;
+	std::vector<DWORD64> m_PermanentEffects;
 	std::list<RegisteredEffect *> m_rgDispatchedEffectsLog;
 
   private:

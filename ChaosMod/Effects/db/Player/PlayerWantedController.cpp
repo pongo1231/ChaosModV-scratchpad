@@ -138,7 +138,7 @@ static void OnStartFake()
 	}
 	case ADD:
 	{
-		int wl = [&]()
+		int wl = [&]
 		{
 			int l = selectedInfo.iStars + (lastLevelf == 0 ? lastLevel : lastLevelf);
 			if (l > 5)

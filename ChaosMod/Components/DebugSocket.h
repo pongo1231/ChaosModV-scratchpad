@@ -3,23 +3,36 @@
 
 #include "Component.h"
 
+#include "Effects/EffectIdentifier.h"
+
 #include <ixwebsocket/IXWebSocketServer.h>
 
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <queue>
 #include <string_view>
+#include <unordered_map>
 
 class DebugSocket : public Component
 {
-  private:
-	std::unique_ptr<ix::WebSocketServer> m_Server;
-
   public:
 	std::queue<std::function<void()>> m_DelegateQueue;
 	std::mutex m_DelegateQueueMutex;
 
+	bool m_IsProfiling = false;
+	struct EffectTraceStats
+	{
+		std::uint64_t MaxTime;
+		std::uint64_t EntryTimestamp;
+	};
+	std::unordered_map<std::string, EffectTraceStats> m_EffectTraceStats;
+
+  private:
+	std::unique_ptr<ix::WebSocketServer> m_Server;
+
+  public:
 	DebugSocket();
 	~DebugSocket();
 
