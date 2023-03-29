@@ -164,11 +164,7 @@ static void OnSetProfileState(DebugSocket *debugSocket, std::shared_ptr<ix::Conn
 
 					              for (const auto &execTrace : traceStats.ExecTraces)
 					              {
-						              json traceJson;
-						              traceJson["timestamp"] = execTrace.Timestamp;
-						              traceJson["exec_time"] = execTrace.ExecTime;
-
-						              profileJson["exec_traces"].push_back(traceJson);
+						              profileJson["exec_times"].push_back(execTrace.ExecTime);
 					              }
 
 					              resultJson["profiles"][effectId] = profileJson;
