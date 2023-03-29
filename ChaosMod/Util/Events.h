@@ -22,7 +22,7 @@ template <typename... Args> class ChaosEvent
 	}
 };
 
-template <typename... Args> class ConditionalChaosEvent
+template <typename... Args> class ChaosCancellableEvent
 {
 	std::vector<std::function<bool(Args...)>> m_Listeners;
 

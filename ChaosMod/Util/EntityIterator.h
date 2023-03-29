@@ -130,7 +130,7 @@ class GenericPool : public PoolUtils<GenericPool>
 
 inline auto &GetAllPeds()
 {
-	static GenericPool *pPedPool = []
+	static GenericPool *pPedPool = []()
 	{
 		Handle handle = Memory::FindPattern("48 8B 05 ?? ?? ?? ?? 41 0F BF C8 0F BF 40 10");
 		return handle.At(2).Into().Value<GenericPool *>();
@@ -141,7 +141,7 @@ inline auto &GetAllPeds()
 
 inline auto &GetAllVehs()
 {
-	static VehiclePool *pVehPool = []
+	static VehiclePool *pVehPool = []()
 	{
 		Handle handle = Memory::FindPattern("48 8B 05 ?? ?? ?? ?? F3 0F 59 F6 48 8B 08");
 		return *handle.At(2).Into().Value<VehiclePool **>();
@@ -152,7 +152,7 @@ inline auto &GetAllVehs()
 
 inline auto &GetAllProps()
 {
-	static GenericPool *pPropPool = []
+	static GenericPool *pPropPool = []()
 	{
 		Handle handle = Memory::FindPattern("48 8B 05 ?? ?? ?? ?? 8B 78 10 85 FF");
 		return handle.At(2).Into().Value<GenericPool *>();

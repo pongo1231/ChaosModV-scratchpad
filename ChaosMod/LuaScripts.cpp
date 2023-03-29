@@ -397,7 +397,7 @@ static void ParseScriptRaw(std::string scriptName, std::string_view script, Pars
 	    P(MetaModifiers::m_fTimerSpeedModifier), "AdditionalEffectsToDispatch",
 	    P(MetaModifiers::m_ucAdditionalEffectsToDispatch), "HideChaosUI", P(MetaModifiers::m_bHideChaosUI),
 	    "DisableChaos", P(MetaModifiers::m_bDisableChaos), "FlipChaosUI", P(MetaModifiers::m_bFlipChaosUI));
-	metaModifiersMetaTable[sol::meta_function::new_index] = [] {
+	metaModifiersMetaTable[sol::meta_function::new_index] = []() {
 	};
 	metaModifiersMetaTable[sol::meta_function::index] = metaModifiersMetaTable;
 	metaModifiersTable[sol::metatable_key]            = metaModifiersMetaTable;

@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <list>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -24,8 +25,15 @@ class DebugSocket : public Component
 	bool m_IsProfiling = false;
 	struct EffectTraceStats
 	{
-		std::uint64_t MaxTime;
-		std::uint64_t EntryTimestamp;
+		std::uint64_t EntryTimestamp = 0;
+		float TotalExecTime          = 0;
+		float MaxExecTime            = 0;
+		struct TraceEntry
+		{
+			std::uint64_t Timestamp = 0;
+			float ExecTime          = 0;
+		};
+		std::list<TraceEntry> ExecTraces;
 	};
 	std::unordered_map<std::string, EffectTraceStats> m_EffectTraceStats;
 

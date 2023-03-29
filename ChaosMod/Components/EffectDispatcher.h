@@ -26,8 +26,8 @@ enum class ETwitchOverlayMode;
 class EffectDispatcher : public Component
 {
   public:
-	ConditionalChaosEvent<const EffectIdentifier &> OnPreDispatch;
-	ChaosEvent<const EffectIdentifier &> OnPostDispatch;
+	ChaosCancellableEvent<const EffectIdentifier &> OnPreDispatchEffect;
+	ChaosEvent<const EffectIdentifier &> OnPostDispatchEffect;
 
 	ChaosEvent<const EffectIdentifier &> OnPreRunEffect;
 	ChaosEvent<const EffectIdentifier &> OnPostRunEffect;
@@ -37,29 +37,29 @@ class EffectDispatcher : public Component
 	{
 		EffectIdentifier m_EffectIdentifier;
 
-		DWORD64 m_ullThreadId = 0;
+		LPVOID m_ThreadId = nullptr;
 
-		std::string m_szName;
-		std::string m_szFakeName;
+		std::string m_Name;
+		std::string m_FakeName;
 
-		float m_fTimer     = 0.f;
-		float m_fMaxTime   = 0.f;
+		float m_Timer     = 0.f;
+		float m_MaxTime   = 0.f;
 
-		bool m_bHideText   = true;
-		bool m_bIsStopping = false;
+		bool m_HideText   = true;
+		bool m_IsStopping = false;
 
 		ActiveEffect(const EffectIdentifier &effectIdentifier, RegisteredEffect *pRegisteredEffect,
 		             const std::string &szName, const std::string &szFakeName, float fTimer)
 		{
 			m_EffectIdentifier          = effectIdentifier;
-			m_szName                    = szName;
-			m_szFakeName                = szFakeName;
-			m_fTimer                    = fTimer;
-			m_fMaxTime                  = fTimer;
+			m_Name                      = szName;
+			m_FakeName                  = szFakeName;
+			m_Timer                     = fTimer;
+			m_MaxTime                   = fTimer;
 
 			EEffectTimedType eTimedType = g_dictEnabledEffects.at(effectIdentifier).TimedType;
 
-			m_ullThreadId               = EffectThreads::CreateThread(
+			m_ThreadId                  = EffectThreads::CreateThread(
                 pRegisteredEffect, eTimedType != EEffectTimedType::Unk && eTimedType != EEffectTimedType::NotTimed);
 		}
 	};
@@ -91,7 +91,7 @@ class EffectDispatcher : public Component
 
   public:
 	std::vector<ActiveEffect> m_rgActiveEffects;
-	std::vector<DWORD64> m_PermanentEffects;
+	std::vector<LPVOID> m_PermanentEffects;
 	std::list<RegisteredEffect *> m_rgDispatchedEffectsLog;
 
   private:

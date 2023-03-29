@@ -20,7 +20,7 @@ namespace Memory
 		static PlayAmbientSpeech *playAmbientSpeechFunc;
 		static unsigned int(__cdecl * getHashKeyFunc)(const char *string, unsigned int init);
 
-		static Handle handle = [] -> Handle
+		static Handle handle = []() -> Handle
 		{
 			Handle initHandle = Memory::FindPattern("48 89 5C 24 08 57 48 83 EC 40 F3 41 0F 10 00");
 

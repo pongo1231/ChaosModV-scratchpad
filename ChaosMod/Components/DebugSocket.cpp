@@ -11,6 +11,8 @@
 
 #define LISTEN_PORT 31819
 
+#define TRACING_ENTRIES_HISTORY_SECONDS 10
+
 using nlohmann::json;
 
 static void QueueDelegate(DebugSocket *debugSocket, std::function<void()> delegate)
@@ -109,8 +111,8 @@ static void OnExecScript(DebugSocket *debugSocket, std::shared_ptr<ix::Connectio
 	              { LuaScripts::RegisterScriptRawTemporary(scriptName, payloadJson["script_raw"]); });
 }
 
-static void OnFetchProfiles(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionState> connectionState,
-                            ix::WebSocket &webSocket, const json &payloadJson)
+static void OnSetProfileState(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionState> connectionState,
+                              ix::WebSocket &webSocket, const json &payloadJson)
 {
 	if (!payloadJson.contains("state") || !payloadJson["state"].is_string())
 	{
@@ -120,32 +122,61 @@ static void OnFetchProfiles(DebugSocket *debugSocket, std::shared_ptr<ix::Connec
 	const auto &state = payloadJson["state"];
 	if (state == "start")
 	{
-		debugSocket->m_IsProfiling = true;
+		if (!debugSocket->m_IsProfiling)
+		{
+			debugSocket->m_IsProfiling = true;
+			QueueDelegate(debugSocket, []() { LOG("Started Profiling!") });
+		}
 	}
 	else if (state == "stop")
 	{
-		debugSocket->m_IsProfiling = false;
-		QueueDelegate(debugSocket, [&] { debugSocket->m_EffectTraceStats.clear(); });
+		if (debugSocket->m_IsProfiling)
+		{
+			debugSocket->m_IsProfiling = false;
+			QueueDelegate(debugSocket,
+			              [debugSocket]()
+			              {
+				              debugSocket->m_EffectTraceStats.clear();
+				              LOG("Stopped Profiling!");
+			              });
+		}
 	}
 	else if (state == "fetch")
 	{
-		QueueDelegate(debugSocket,
-		              [&]
-		              {
-			              json resultJson;
-			              resultJson["command"] = "profile_state";
-			              for (const auto &[effectId, traceStats] : debugSocket->m_EffectTraceStats)
+		if (debugSocket->m_IsProfiling)
+		{
+			QueueDelegate(debugSocket,
+			              [debugSocket, &webSocket]
 			              {
-				              json profileJson;
-				              profileJson["effect_id"]       = effectId;
-				              profileJson["last_entry_time"] = traceStats.EntryTimestamp;
-				              profileJson["max_exec_time"]   = traceStats.MaxTime;
+				              json resultJson;
+				              resultJson["command"]  = "profile_state";
+				              resultJson["profiles"] = json({});
+				              for (const auto &[effectId, traceStats] : debugSocket->m_EffectTraceStats)
+				              {
+					              if (traceStats.TotalExecTime == 0)
+					              {
+						              continue;
+					              }
 
-				              resultJson["profiles"].push_back(profileJson);
-			              }
+					              json profileJson;
+					              profileJson["total_exec_time"] = traceStats.TotalExecTime;
+					              profileJson["max_exec_time"]   = traceStats.MaxExecTime;
 
-			              webSocket.send(resultJson.dump());
-		              });
+					              for (const auto &execTrace : traceStats.ExecTraces)
+					              {
+						              json traceJson;
+						              traceJson["timestamp"] = execTrace.Timestamp;
+						              traceJson["exec_time"] = execTrace.ExecTime;
+
+						              profileJson["exec_traces"].push_back(traceJson);
+					              }
+
+					              resultJson["profiles"][effectId] = profileJson;
+				              }
+
+				              webSocket.send(resultJson.dump());
+			              });
+		}
 	}
 }
 
@@ -183,20 +214,26 @@ static void OnMessage(DebugSocket *debugSocket, std::shared_ptr<ix::ConnectionSt
 	SET_HANDLER("fetch_effects", OnFetchEffects);
 	SET_HANDLER("trigger_effect", OnTriggerEffect);
 	SET_HANDLER("exec_script", OnExecScript);
-	SET_HANDLER("profile_state", OnFetchProfiles);
+	SET_HANDLER("profile_state", OnSetProfileState);
 
 #undef HANDLER
 }
 
-static bool EventOnPreRunEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
+static bool EventOnPreDispatchEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
 {
-	if (!debugSocket->m_IsProfiling)
-	{
-		return true;
-	}
-
-	debugSocket->m_EffectTraceStats[identifier.GetEffectId()].EntryTimestamp = GetTickCount64();
+	debugSocket->m_EffectTraceStats.erase(identifier.GetEffectId());
 	return true;
+}
+
+static void EventOnPreRunEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
+{
+	if (debugSocket->m_IsProfiling)
+	{
+		LARGE_INTEGER ticks;
+		QueryPerformanceCounter(&ticks);
+
+		debugSocket->m_EffectTraceStats[identifier.GetEffectId()].EntryTimestamp = ticks.QuadPart;
+	}
 }
 
 static void EventOnPostRunEffect(DebugSocket *debugSocket, const EffectIdentifier &identifier)
@@ -212,10 +249,28 @@ static void EventOnPostRunEffect(DebugSocket *debugSocket, const EffectIdentifie
 		return;
 	}
 
-	auto execTime = GetTickCount64() - debugSocket->m_EffectTraceStats[effectId].EntryTimestamp;
-	if (execTime > debugSocket->m_EffectTraceStats[effectId].MaxTime)
+	auto &traceStats = debugSocket->m_EffectTraceStats.at(effectId);
+
+	LARGE_INTEGER ticks;
+	QueryPerformanceCounter(&ticks);
+	std::uint64_t timestamp = ticks.QuadPart;
+
+	LARGE_INTEGER freq;
+	QueryPerformanceFrequency(&freq);
+
+	auto execTime = (timestamp - traceStats.EntryTimestamp) / static_cast<float>(freq.QuadPart);
+	traceStats.TotalExecTime += execTime;
+
+	traceStats.ExecTraces.push_back({ .Timestamp = timestamp, .ExecTime = execTime });
+	if ((timestamp - traceStats.ExecTraces.front().Timestamp) / static_cast<float>(freq.QuadPart)
+	    > TRACING_ENTRIES_HISTORY_SECONDS)
 	{
-		debugSocket->m_EffectTraceStats[effectId].MaxTime = execTime;
+		traceStats.ExecTraces.pop_front();
+	}
+
+	if (execTime > traceStats.MaxExecTime)
+	{
+		traceStats.MaxExecTime = execTime;
 	}
 }
 
@@ -236,8 +291,10 @@ DebugSocket::DebugSocket()
 
 	if (ComponentExists<EffectDispatcher>())
 	{
+		GetComponent<EffectDispatcher>()->OnPreDispatchEffect.AddListener(
+		    [&](const EffectIdentifier &identifier) { return EventOnPreDispatchEffect(this, identifier); });
 		GetComponent<EffectDispatcher>()->OnPreRunEffect.AddListener([&](const EffectIdentifier &identifier)
-		                                                             { return EventOnPreRunEffect(this, identifier); });
+		                                                             { EventOnPreRunEffect(this, identifier); });
 		GetComponent<EffectDispatcher>()->OnPostRunEffect.AddListener([&](const EffectIdentifier &identifier)
 		                                                              { EventOnPostRunEffect(this, identifier); });
 	}

@@ -172,7 +172,7 @@ namespace Memory
 
 	DWORD64 *GetGlobalPtr(int globalId)
 	{
-		static auto globalPtr = [] -> DWORD64 **
+		static auto globalPtr = []() -> DWORD64 **
 		{
 			auto handle = FindPattern("4C 8D 05 ? ? ? ? 4D 8B 08 4D 85 C9 74 11");
 			if (!handle.IsValid())
@@ -183,7 +183,7 @@ namespace Memory
 			return handle.At(2).Into().Get<DWORD64 *>();
 		}();
 
-		static auto fallbackToSHV = [] -> bool
+		static auto fallbackToSHV = []() -> bool
 		{
 			bool fallbackToSHV = !globalPtr;
 
@@ -229,7 +229,7 @@ namespace Memory
 
 	std::string GetGameBuild()
 	{
-		static auto gameBuild = [] -> std::string
+		static auto gameBuild = []() -> std::string
 		{
 			auto handle = Memory::FindPattern("33 DB 38 1D ? ? ? ? 89 5C 24 38");
 			if (!handle.IsValid())

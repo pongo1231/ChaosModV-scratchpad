@@ -29,7 +29,7 @@ namespace Memory
 			return handle;
 		}();
 
-		static auto scrProgramRegistry__FindProgramByHash = [] -> rage::scrProgram *(*)(DWORD64, Hash)
+		static auto scrProgramRegistry__FindProgramByHash = []() -> rage::scrProgram *(*)(DWORD64, Hash)
 		{
 			if (!sharedHandle.IsValid())
 			{
@@ -39,7 +39,7 @@ namespace Memory
 			return sharedHandle.At(14).Into().Get<rage::scrProgram *(DWORD64, Hash)>();
 		}();
 
-		static auto scrProgramDirectory = [] -> DWORD64
+		static auto scrProgramDirectory = []() -> DWORD64
 		{
 			if (!sharedHandle.IsValid())
 			{

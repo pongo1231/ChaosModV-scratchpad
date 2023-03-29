@@ -80,7 +80,7 @@ namespace Memory
 			return;
 		}
 
-		static auto outOfControlStateOffset = [] -> WORD
+		static auto outOfControlStateOffset = []() -> WORD
 		{
 			auto handle = FindPattern("FF 90 ? ? 00 00 80 A3 ? ? 00 00 fE 40 80 E7 01");
 			if (!handle.IsValid())
@@ -151,7 +151,7 @@ namespace Memory
 
 	inline bool IsVehicleBraking(Vehicle vehicle)
 	{
-		static auto brakeStateOffset = [] -> WORD
+		static auto brakeStateOffset = []() -> WORD
 		{
 			auto handle = FindPattern("F3 0F 11 80 ? ? 00 00 48 83 C4 20 5B C3 ? ? 40 53");
 			if (!handle.IsValid())
