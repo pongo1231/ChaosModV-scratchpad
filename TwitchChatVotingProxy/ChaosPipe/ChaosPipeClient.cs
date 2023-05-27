@@ -202,7 +202,7 @@ namespace TwitchChatVotingProxy.ChaosPipe
         /// Sends a message to the chaos mod pipe
         /// </summary>
         /// <param name="message">Message to be sent</param>
-        private void SendMessageToPipe(string message)
+        public void SendMessageToPipe(string message)
         {
             pipeWriter.Write($"{message}\0");
             pipe.WaitForPipeDrain();
