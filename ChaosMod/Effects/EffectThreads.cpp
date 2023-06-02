@@ -85,7 +85,7 @@ namespace EffectThreads
 		return m_Threads.at(threadId)->m_PauseTimestamp >= GetTickCount64();
 	}
 
-	void _RunThread(auto &it, DWORD64 curTimestamp)
+	void _RunThread(auto &it)
 	{
 		auto &[threadId, thread] = *it;
 
@@ -108,7 +108,7 @@ namespace EffectThreads
 		auto curTimestamp = GetTickCount64();
 		for (auto it = m_Threads.begin(); it != m_Threads.end();)
 		{
-			_RunThread(it, curTimestamp);
+			_RunThread(it);
 		}
 	}
 
@@ -117,7 +117,7 @@ namespace EffectThreads
 		auto result = m_Threads.find(threadId);
 		if (result != m_Threads.end())
 		{
-			_RunThread(result, GetTickCount64());
+			_RunThread(result);
 		}
 	}
 
