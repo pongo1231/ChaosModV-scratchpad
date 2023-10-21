@@ -1,7 +1,6 @@
 name: ChaosMod.vcxproj Check
 
 on:
-  pull_request:
   push:
 permissions:
   contents: read
