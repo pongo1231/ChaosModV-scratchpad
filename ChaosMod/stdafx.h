@@ -20,6 +20,8 @@
 #define SOL_ALL_SAFETIES_ON 1
 #define SOL_SAFE_NUMERICS 1
 #include <sol3/sol.hpp>
+#include <websocketpp/client.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
 
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>

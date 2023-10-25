@@ -16,6 +16,7 @@
 #include "Components/Shortcuts.h"
 #include "Components/SplashTexts.h"
 #include "Components/TwitchVoting.h"
+#include "Components/WebListener.h"
 
 #include "Util/OptionsManager.h"
 #include "Util/PoolSpawner.h"
@@ -156,6 +157,9 @@ static void Init()
 	LOG("Initializing Failsafe");
 	InitComponent<Failsafe>();
 
+	LOG("Initializing WebListener");
+	InitComponent<WebListener>();
+
 	LOG("Completed init!");
 
 	if (ComponentExists<TwitchVoting>() && GetComponent<TwitchVoting>()->IsEnabled() && ComponentExists<SplashTexts>())
@@ -264,12 +268,15 @@ namespace Main
 	void OnCleanup()
 	{
 		LuaScripts::Unload();
+
+		if (ComponentExists<WebListener>())
+			GetComponent<WebListener>()->Close();
 	}
 
 	void OnKeyboardInput(DWORD ulKey, WORD usRepeats, BYTE ucScanCode, BOOL bIsExtended, BOOL bIsWithAlt,
 	                     BOOL bWasDownBefore, BOOL bIsUpNow)
 	{
-		static bool c_bIsCtrlPressed = false;
+		static bool c_bIsCtrlPressed  = false;
 		static bool c_bIsShiftPressed = false;
 
 		if (ulKey == VK_CONTROL)

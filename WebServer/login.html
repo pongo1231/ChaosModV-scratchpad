@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        const password = prompt("Password", "");
+
+        if (password) {
+            let xmlHttp = new XMLHttpRequest();
+            xmlHttp.open("POST", "https://gopong.dev:6910/authorize", false);
+            xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            xmlHttp.send("password=" + password);
+
+            if (xmlHttp.status == 200)
+                document.cookie = "token=" + xmlHttp.responseText + ";SameSite=Strict";
+        }
+
+        window.location.replace("https://gopong.dev:6910");
+    </script>
+</head>
+
+<body bgcolor=”#b2ebf2">
+
+</body>
+
+</html>

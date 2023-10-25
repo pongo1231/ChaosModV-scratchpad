@@ -7,3 +7,13 @@
 	path = vendor/shv
 	url = https://github.com/pongo1231/shv_no_msvc
 	ignore = dirty
+[submodule "vendor/websocketpp"]
+	path = vendor/websocketpp
+	url = https://github.com/zaphoyd/websocketpp.git
+	branch = develop
+[submodule "vendor/boost-cmake"]
+	path = vendor/boost-cmake
+	url = https://github.com/Orphis/boost-cmake.git
+[submodule "vendor/openssl-cmake"]
+	path = vendor/openssl-cmake
+	url = https://github.com/viaduck/openssl-cmake
